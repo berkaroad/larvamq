@@ -131,19 +131,15 @@ func (cm *ClientManager) Broadcast(messageChan chan *Message) {
 }
 
 func (cm *ClientManager) ConsumeWithLoadBalance(messageChan chan *Message) {
-	wg := new(sync.WaitGroup)
 	clientChan := make(chan *Client, cm.Len())
 	for e := cm.clientList.Front(); e != nil; e = e.Next() {
 		clientChan <- e.Value.(*Client)
-		wg.Add(1)
 		go func(clientChan chan *Client) {
 			client := <-clientChan
 			data := <-messageChan
 			client.Send(data.Msg)
-			wg.Done()
 		}(clientChan)
 	}
-	wg.Wait()
 }
 
 type Message struct {
