@@ -3,10 +3,11 @@ package main
 import (
 	"errors"
 	"flag"
-	"fmt"
+	"log"
 	"net"
 	"net/http"
 	_ "net/http/pprof"
+	"os"
 	"strconv"
 	"time"
 
@@ -14,6 +15,8 @@ import (
 )
 
 const DefaultPort int = 4000
+
+var consoleLog = log.New(os.Stdout, "[larvamqd] ", log.LstdFlags)
 
 var productorMgr = conn.NewClientManager()
 var consumerMgr = conn.NewClientManager()
@@ -26,7 +29,7 @@ func main() {
 	flag.Parse()
 
 	if listener, err := net.Listen("tcp", ":"+strconv.Itoa(port)); err != nil {
-		fmt.Println(err)
+		consoleLog.Println(err)
 	} else {
 		go func() {
 			http.ListenAndServe("127.0.0.1:6060", nil)
@@ -65,7 +68,7 @@ func handleClient(client *conn.Client) {
 				consumerMgr.RemoveClient(clientID)
 			}
 			client.Close()
-			fmt.Println("close", err)
+			consoleLog.Println(err)
 			break
 		} else {
 			if clientType == conn.CLIENT_TYPE_PRODUCTOR {
