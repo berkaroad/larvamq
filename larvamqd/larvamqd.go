@@ -18,6 +18,7 @@ const DefaultPort int = 4000
 var productorMgr = conn.NewClientManager()
 var consumerMgr = conn.NewClientManager()
 var broadcastMsgChan = make(chan *conn.Message, 100000)
+var failMsgChan = make(chan *conn.Message, 30000)
 
 func main() {
 	port := 0
@@ -36,7 +37,7 @@ func main() {
 					time.Sleep(10 * time.Second)
 					continue
 				}
-				consumerMgr.ConsumeWithLoadBalance(broadcastMsgChan)
+				consumerMgr.ConsumeWithLoadBalance(broadcastMsgChan, failMsgChan)
 			}
 		}()
 		for {

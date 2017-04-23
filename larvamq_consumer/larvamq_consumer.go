@@ -42,6 +42,7 @@ func main() {
 				timer.Reset(time.Second)
 			}
 		}()
+		time.Sleep(time.Second * 2)
 		for {
 			if _, err := p.ReadPacket(); err != nil {
 				consoleLog.Println(err)

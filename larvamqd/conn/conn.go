@@ -130,7 +130,7 @@ func (cm *ClientManager) Broadcast(messageChan chan *Message) {
 	wg.Wait()
 }
 
-func (cm *ClientManager) ConsumeWithLoadBalance(messageChan chan *Message) {
+func (cm *ClientManager) ConsumeWithLoadBalance(messageChan chan *Message, failMessageChan chan *Message) {
 	wg := new(sync.WaitGroup)
 	clientChan := make(chan *Client, cm.Len())
 	for e := cm.clientList.Front(); e != nil; e = e.Next() {
@@ -138,11 +138,19 @@ func (cm *ClientManager) ConsumeWithLoadBalance(messageChan chan *Message) {
 		wg.Add(1)
 		go func(clientChan chan *Client) {
 			client := <-clientChan
-			data := <-messageChan
-			if err := client.Send(data.Msg); err != nil {
-				cm.RemoveClient(client.ID())
-				client.Close()
-				messageChan <- data
+			select {
+			case data := <-failMessageChan:
+				if err := client.Send(data.Msg); err != nil {
+					cm.RemoveClient(client.ID())
+					client.Close()
+					failMessageChan <- data
+				}
+			case data := <-messageChan:
+				if err := client.Send(data.Msg); err != nil {
+					cm.RemoveClient(client.ID())
+					client.Close()
+					failMessageChan <- data
+				}
 			}
 			wg.Done()
 		}(clientChan)
