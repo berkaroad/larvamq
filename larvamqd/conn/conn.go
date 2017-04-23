@@ -16,11 +16,19 @@ func init() {
 	packetio.DEBUG = false
 }
 
+const (
+	CLIENT_TYPE_PRODUCTOR ClientType = 1
+	CLIENT_TYPE_CONSUMER  ClientType = 2
+)
+
+type ClientType int32
+
 type Client struct {
 	id     uuid.UUID
+	t      int32
+	closed int32
 	c      net.Conn
 	p      *packetio.PacketIO
-	closed int32
 }
 
 func NewClient(c net.Conn) *Client {
@@ -35,8 +43,16 @@ func (c *Client) ID() uuid.UUID {
 	return c.id
 }
 
+func (c *Client) SetClientType(t ClientType) {
+	atomic.CompareAndSwapInt32(&c.t, 0, int32(t))
+}
+
+func (c *Client) ClientType() ClientType {
+	return ClientType(atomic.LoadInt32(&c.t))
+}
+
 func (c *Client) SayHello() {
-	c.SendText("Welcome to use LarvaMQ")
+	c.Send([]byte("Welcome to use LarvaMQ"))
 }
 
 func (c *Client) Send(data []byte) error {
@@ -44,10 +60,6 @@ func (c *Client) Send(data []byte) error {
 		return c.p.WritePacket(data)
 	}
 	return errors.New("is closed")
-}
-
-func (c *Client) SendText(text string) error {
-	return c.Send(append([]byte(text), '\n'))
 }
 
 func (c *Client) Receive() ([]byte, error) {
