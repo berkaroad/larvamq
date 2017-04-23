@@ -39,8 +39,7 @@ func main() {
 			http.ListenAndServe("127.0.0.1:6060", nil)
 		}()
 		go func() {
-			for true {
-				// println(len(cacheChan))
+			for {
 				if consumerMgr.Len() == 0 {
 					time.Sleep(10 * time.Second)
 					continue
@@ -50,7 +49,7 @@ func main() {
 				broadcastMsg = nil
 			}
 		}()
-		for true {
+		for {
 			c, _ := listener.Accept()
 			client := conn.NewClient(c)
 			go handleClient(client)
@@ -64,7 +63,8 @@ func handleClient(client *conn.Client) {
 	}
 	clientID := client.ID()
 	clientType := client.ClientType()
-	for true {
+
+	for {
 		data, err := client.Receive()
 		if err != nil {
 			data = nil

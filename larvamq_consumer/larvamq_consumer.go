@@ -4,6 +4,8 @@ import (
 	"log"
 	"net"
 	"os"
+	"sync/atomic"
+	"time"
 
 	"flag"
 
@@ -33,16 +35,22 @@ func main() {
 		data, _ := p.ReadPacket()
 		consoleLog.Println(string(data))
 		p.WritePacket([]byte{'c'})
-		i := 0
-		for true {
+
+		var counter int32
+		timer := time.NewTimer(time.Second)
+		go func() {
+			for {
+				<-timer.C
+				consoleLog.Println("received:", atomic.SwapInt32(&counter, 0))
+				timer.Reset(time.Second)
+			}
+		}()
+		for {
 			if _, err := p.ReadPacket(); err != nil {
 				consoleLog.Println(err)
 				break
 			} else {
-				i++
-				if i%10000 == 0 {
-					consoleLog.Println("received")
-				}
+				atomic.AddInt32(&counter, 1)
 			}
 		}
 	}

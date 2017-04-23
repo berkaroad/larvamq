@@ -1,14 +1,13 @@
 package main
 
 import (
+	"flag"
+	"fmt"
 	"log"
 	"net"
 	"os"
-	"strconv"
-
-	"flag"
-
-	"fmt"
+	"sync/atomic"
+	"time"
 
 	"github.com/berkaroad/packetio"
 )
@@ -34,14 +33,23 @@ func main() {
 		data, _ := p.ReadPacket()
 		consoleLog.Println(string(data))
 		p.WritePacket([]byte{'p'})
-		for j := 0; j < 10; j++ {
-			for i := 0; i < 100000; i++ {
-				if err := p.WritePacket([]byte("Hello, i'm jerry " + strconv.Itoa(i*(j+1)))); err != nil {
-					consoleLog.Println(err)
-					break
-				}
+
+		var counter int32
+		timer := time.NewTimer(time.Second)
+		go func() {
+			for {
+				<-timer.C
+				consoleLog.Println("sent:", atomic.SwapInt32(&counter, 0))
+				timer.Reset(time.Second)
 			}
-			consoleLog.Println("send", j)
+		}()
+		for {
+			if err := p.WritePacket([]byte("Hello, i'm jerry ")); err != nil {
+				consoleLog.Println(err)
+				break
+			} else {
+				atomic.AddInt32(&counter, 1)
+			}
 		}
 	}
 }
