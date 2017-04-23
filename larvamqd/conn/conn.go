@@ -114,27 +114,10 @@ func (cm *ClientManager) Len() int {
 	return cm.clientList.Len()
 }
 
-func (cm *ClientManager) Broadcast(messageChan chan *Message) {
-	data := <-messageChan
+func (cm *ClientManager) SendWithLB(messageChan chan *Message, failMessageChan chan *Message) {
 	wg := new(sync.WaitGroup)
 	clientChan := make(chan *Client, cm.Len())
 	for e := cm.clientList.Front(); e != nil; e = e.Next() {
-		clientChan <- e.Value.(*Client)
-		wg.Add(1)
-		go func(clientChan chan *Client) {
-			client := <-clientChan
-			client.Send(data.Msg)
-			wg.Done()
-		}(clientChan)
-	}
-	wg.Wait()
-}
-
-func (cm *ClientManager) ConsumeWithLoadBalance(messageChan chan *Message, failMessageChan chan *Message) {
-	wg := new(sync.WaitGroup)
-	clientChan := make(chan *Client, cm.Len())
-	for e := cm.clientList.Front(); e != nil; e = e.Next() {
-		clientChan <- e.Value.(*Client)
 		wg.Add(1)
 		go func(clientChan chan *Client) {
 			client := <-clientChan
@@ -154,6 +137,7 @@ func (cm *ClientManager) ConsumeWithLoadBalance(messageChan chan *Message, failM
 			}
 			wg.Done()
 		}(clientChan)
+		clientChan <- e.Value.(*Client)
 	}
 	wg.Wait()
 }

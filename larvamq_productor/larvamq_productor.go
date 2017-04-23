@@ -22,6 +22,8 @@ func init() {
 func main() {
 	serverAddr := ""
 	flag.StringVar(&serverAddr, "s", DefaultServerAddr, "server address to connect larvamqd")
+	topicName := ""
+	flag.StringVar(&topicName, "t", "public", "topic name")
 	flag.Parse()
 	net.ResolveTCPAddr("tcp", serverAddr)
 
@@ -31,7 +33,7 @@ func main() {
 		p := packetio.New(conn)
 		data, _ := p.ReadPacket()
 		consoleLog.Println(string(data))
-		p.WritePacket([]byte{'p'})
+		p.WritePacket([]byte("p:" + topicName))
 
 		var counter int32
 		var failCounter int32
