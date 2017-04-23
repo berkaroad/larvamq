@@ -13,7 +13,7 @@ import (
 )
 
 var DefaultServerAddr = "127.0.0.1:4000"
-var consoleLog = log.New(os.Stdout, "[packetio] ", log.LstdFlags)
+var consoleLog = log.New(os.Stdout, "[larvamq_consumer] ", log.LstdFlags)
 
 func init() {
 	packetio.DEBUG = false
