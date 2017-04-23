@@ -19,8 +19,8 @@ type Topic struct {
 func NewTopic(name string, client *Client) *Topic {
 	t := new(Topic)
 	t.name = name
-	t.MsgChan = make(chan *Message, 100000)
-	t.FailMsgChan = make(chan *Message, 30000)
+	t.MsgChan = make(chan *Message, 1000)
+	t.FailMsgChan = make(chan *Message, 1000)
 	t.ExitChan = make(chan int)
 	t.productorMgr = NewClientManager()
 	t.consumerMgr = NewClientManager()
