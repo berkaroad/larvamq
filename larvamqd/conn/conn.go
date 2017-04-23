@@ -82,14 +82,14 @@ func (c *Client) Close() {
 }
 
 type ClientManager struct {
-	clientList *list.List
 	l          *sync.Mutex
+	clientList *list.List
 }
 
 func NewClientManager() *ClientManager {
 	cm := &ClientManager{}
-	cm.clientList = list.New()
 	cm.l = &sync.Mutex{}
+	cm.clientList = list.New()
 	return cm
 }
 
