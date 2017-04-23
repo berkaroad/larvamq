@@ -2,30 +2,22 @@ package main
 
 import (
 	"errors"
+	"flag"
 	"fmt"
 	"net"
 	"net/http"
 	_ "net/http/pprof"
 	"strconv"
-
 	"time"
 
-	"flag"
-
 	"github.com/berkaroad/larvamq/larvamqd/conn"
-	"github.com/berkaroad/uuid"
 )
 
 const DefaultPort int = 4000
 
 var productorMgr = conn.NewClientManager()
 var consumerMgr = conn.NewClientManager()
-var cacheChan = make(chan *BroadcastMessage, 100000)
-
-type BroadcastMessage struct {
-	ClientID uuid.UUID
-	Msg      []byte
-}
+var broadcastMsgChan = make(chan *conn.Message, 100000)
 
 func main() {
 	port := 0
@@ -44,9 +36,7 @@ func main() {
 					time.Sleep(10 * time.Second)
 					continue
 				}
-				broadcastMsg := <-cacheChan
-				consumerMgr.Broadcast(broadcastMsg.Msg)
-				broadcastMsg = nil
+				consumerMgr.ConsumeWithLoadBalance(broadcastMsgChan)
 			}
 		}()
 		for {
@@ -78,7 +68,8 @@ func handleClient(client *conn.Client) {
 			break
 		} else {
 			if clientType == conn.CLIENT_TYPE_PRODUCTOR {
-				cacheChan <- &BroadcastMessage{ClientID: clientID, Msg: data}
+				broadcastMsgChan <- &conn.Message{ClientID: clientID, Msg: data}
+				client.Send([]byte("ACK"))
 			}
 			data = nil
 		}

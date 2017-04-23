@@ -1,15 +1,13 @@
 package main
 
 import (
+	"flag"
+	"fmt"
 	"log"
 	"net"
 	"os"
 	"sync/atomic"
 	"time"
-
-	"flag"
-
-	"fmt"
 
 	"github.com/berkaroad/packetio"
 )
@@ -31,7 +29,6 @@ func main() {
 		fmt.Println(err)
 	} else {
 		p := packetio.New(conn)
-		consoleLog.Println("Start")
 		data, _ := p.ReadPacket()
 		consoleLog.Println(string(data))
 		p.WritePacket([]byte{'c'})

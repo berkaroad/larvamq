@@ -29,18 +29,31 @@ func main() {
 		fmt.Println(err)
 	} else {
 		p := packetio.New(conn)
-		consoleLog.Println("Start")
 		data, _ := p.ReadPacket()
 		consoleLog.Println(string(data))
 		p.WritePacket([]byte{'p'})
 
 		var counter int32
+		var failCounter int32
 		timer := time.NewTimer(time.Second)
 		go func() {
 			for {
 				<-timer.C
-				consoleLog.Println("sent:", atomic.SwapInt32(&counter, 0))
+				consoleLog.Println("sent:", atomic.SwapInt32(&counter, 0), " fail:", atomic.SwapInt32(&failCounter, 0))
 				timer.Reset(time.Second)
+			}
+		}()
+		go func() {
+			for {
+				if data, err := p.ReadPacket(); err != nil {
+					consoleLog.Println(err)
+					break
+				} else {
+					if string(data) != "ACK" {
+						atomic.AddInt32(&failCounter, 1)
+						println(string(data))
+					}
+				}
 			}
 		}()
 		for {
