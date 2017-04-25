@@ -16,7 +16,7 @@ func init() {
 }
 
 const (
-	CLIENT_TYPE_PRODUCTOR ClientType = 1
+	CLIENT_TYPE_PRODUCTER ClientType = 1
 	CLIENT_TYPE_CONSUMER  ClientType = 2
 )
 
@@ -108,6 +108,12 @@ func (cm *ClientManager) RemoveClient(clientID uuid.UUID) {
 			break
 		}
 	}
+}
+
+func (cm *ClientManager) RemoveAllClient() {
+	defer cm.l.Unlock()
+	cm.l.Lock()
+	cm.clientList = cm.clientList.Init()
 }
 
 func (cm *ClientManager) Len() int {

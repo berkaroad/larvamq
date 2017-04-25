@@ -10,6 +10,8 @@ import (
 	"os"
 	"strconv"
 
+	"time"
+
 	"github.com/berkaroad/larvamq/larvamqd/conn"
 )
 
@@ -45,7 +47,7 @@ func handleClient(client *conn.Client) {
 		clientID := client.ID()
 		clientType := client.ClientType()
 		topic := topicMgr.CreateOrJoinTopic(topicName, client)
-		println(topicName)
+		consoleLog.Println("CreateOrJoinTopic:", topicName)
 		for {
 			data, err := client.Receive()
 			if err != nil {
@@ -55,9 +57,14 @@ func handleClient(client *conn.Client) {
 				consoleLog.Println(err)
 				break
 			} else {
-				if clientType == conn.CLIENT_TYPE_PRODUCTOR {
-					topic.MsgChan <- &conn.Message{ClientID: clientID, Msg: data}
-					client.Send([]byte("ACK"))
+				if clientType == conn.CLIENT_TYPE_PRODUCTER {
+					if cap(topic.MsgChan) == len(topic.MsgChan) {
+						client.Send([]byte("FAIL:[MsgID]"))
+						time.Sleep(time.Second)
+					} else {
+						topic.MsgChan <- &conn.Message{ClientID: clientID, Msg: data}
+						client.Send([]byte("ACK"))
+					}
 				}
 				data = nil
 			}
@@ -72,7 +79,7 @@ func shakeHand(client *conn.Client) (string, error) {
 		client.Close()
 		return "", errors.New("shake hand error")
 	} else if string(data[0:2]) == "p:" {
-		client.SetClientType(conn.CLIENT_TYPE_PRODUCTOR)
+		client.SetClientType(conn.CLIENT_TYPE_PRODUCTER)
 	} else if string(data[0:2]) == "c:" {
 		client.SetClientType(conn.CLIENT_TYPE_CONSUMER)
 	} else {

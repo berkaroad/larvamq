@@ -12,7 +12,7 @@ type Topic struct {
 	MsgChan      chan *Message
 	FailMsgChan  chan *Message
 	ExitChan     chan int
-	productorMgr *ClientManager
+	producterMgr *ClientManager
 	consumerMgr  *ClientManager
 }
 
@@ -22,12 +22,12 @@ func NewTopic(name string, client *Client) *Topic {
 	t.MsgChan = make(chan *Message, 1000)
 	t.FailMsgChan = make(chan *Message, 1000)
 	t.ExitChan = make(chan int)
-	t.productorMgr = NewClientManager()
+	t.producterMgr = NewClientManager()
 	t.consumerMgr = NewClientManager()
 
 	switch client.ClientType() {
-	case CLIENT_TYPE_PRODUCTOR:
-		t.productorMgr.AddClient(client)
+	case CLIENT_TYPE_PRODUCTER:
+		t.producterMgr.AddClient(client)
 	case CLIENT_TYPE_CONSUMER:
 		t.consumerMgr.AddClient(client)
 	default:
@@ -42,8 +42,8 @@ func (t *Topic) Name() string {
 
 func (t *Topic) AddClient(client *Client) {
 	switch client.ClientType() {
-	case CLIENT_TYPE_PRODUCTOR:
-		t.productorMgr.AddClient(client)
+	case CLIENT_TYPE_PRODUCTER:
+		t.producterMgr.AddClient(client)
 	case CLIENT_TYPE_CONSUMER:
 		t.consumerMgr.AddClient(client)
 	}
@@ -51,8 +51,8 @@ func (t *Topic) AddClient(client *Client) {
 
 func (t *Topic) RemoveClient(clientID uuid.UUID, clientType ClientType) {
 	switch clientType {
-	case CLIENT_TYPE_PRODUCTOR:
-		t.productorMgr.RemoveClient(clientID)
+	case CLIENT_TYPE_PRODUCTER:
+		t.producterMgr.RemoveClient(clientID)
 	case CLIENT_TYPE_CONSUMER:
 		t.consumerMgr.RemoveClient(clientID)
 	}
@@ -64,6 +64,14 @@ func (t *Topic) SendWithLB() {
 	} else {
 		t.consumerMgr.SendWithLB(t.MsgChan, t.FailMsgChan)
 	}
+}
+
+func (t *Topic) Close() {
+	t.producterMgr.RemoveAllClient()
+	t.consumerMgr.RemoveAllClient()
+	close(t.MsgChan)
+	close(t.FailMsgChan)
+	close(t.ExitChan)
 }
 
 type TopicManager struct {
@@ -92,6 +100,7 @@ func (tm *TopicManager) CreateOrJoinTopic(topicName string, client *Client) *Top
 			for {
 				select {
 				case <-topic.ExitChan:
+					topic.Close()
 					break
 				default:
 					topic.SendWithLB()
