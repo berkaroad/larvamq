@@ -64,6 +64,10 @@ func handleClient(client *conn.Client) {
 					} else {
 						topic.MsgChan <- &conn.Message{ClientID: clientID, Msg: data}
 						client.Send([]byte("ACK"))
+						if len(topic.MsgChan) >= int(0.8*float32(cap(topic.MsgChan))) {
+							// 达到80%时限流
+							time.Sleep(time.Second)
+						}
 					}
 				}
 				data = nil

@@ -76,6 +76,7 @@ func main() {
 					atomic.AddInt64(&totalSuccessCounter, 1)
 				} else {
 					atomic.AddInt32(&failCounter, 1)
+					time.Sleep(time.Millisecond * 100)
 				}
 			}
 		}
