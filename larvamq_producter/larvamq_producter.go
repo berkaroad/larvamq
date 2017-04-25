@@ -13,7 +13,7 @@ import (
 )
 
 var DefaultServerAddr = "127.0.0.1:4000"
-var consoleLog = log.New(os.Stdout, "[larvamq_productor] ", log.LstdFlags)
+var consoleLog = log.New(os.Stdout, "[larvamq_producter] ", log.LstdFlags)
 
 func init() {
 	packetio.DEBUG = false
@@ -37,13 +37,12 @@ func main() {
 
 		var counter int32
 		var failCounter int32
-		var totalCounter int64
 		var totalSuccessCounter int64
 		timer := time.NewTimer(time.Second)
 		go func() {
 			for {
 				<-timer.C
-				consoleLog.Println("sent:", atomic.SwapInt32(&counter, 0), " fail:", atomic.SwapInt32(&failCounter, 0), " total sent:", atomic.LoadInt64(&totalCounter), " total success:", atomic.LoadInt64(&totalSuccessCounter))
+				consoleLog.Println("sent:", atomic.SwapInt32(&counter, 0), " fail:", atomic.SwapInt32(&failCounter, 0), " total success:", atomic.LoadInt64(&totalSuccessCounter))
 				timer.Reset(time.Second)
 			}
 		}()
@@ -67,18 +66,18 @@ func main() {
 				break
 			}
 			atomic.AddInt32(&counter, 1)
-			atomic.AddInt64(&totalCounter, 1)
-			if data, err := p.ReadPacket(); err != nil {
-				consoleLog.Println(err)
-				break
-			} else {
-				if string(data) == "ACK" {
-					atomic.AddInt64(&totalSuccessCounter, 1)
+			go func() {
+				if data, err := p.ReadPacket(); err != nil {
+					consoleLog.Println(err)
 				} else {
-					atomic.AddInt32(&failCounter, 1)
-					time.Sleep(time.Millisecond * 100)
+					if string(data) == "ACK" {
+						atomic.AddInt64(&totalSuccessCounter, 1)
+					} else {
+						atomic.AddInt32(&failCounter, 1)
+						time.Sleep(time.Millisecond * 100)
+					}
 				}
-			}
+			}()
 		}
 	}
 }
